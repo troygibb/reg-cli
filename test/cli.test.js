@@ -12,6 +12,10 @@ const WORKSPACE = 'test/__workspace__';
 const RESOURCE = 'resource';
 const SAMPLE_IMAGE = 'sample.png';
 const SAMPLE_DIFF_IMAGE = 'sample.png';
+const SAMPLE_IMAGE_JPG = 'sample-1.jpg';
+const SAMPLE_DIFF_IMAGE_JPG = 'sample-1.jpg';
+
+
 
 const replaceReportPath = report => {
   Object.keys(report).forEach(key => {
@@ -27,6 +31,7 @@ test.beforeEach(async t => {
 })
 
 
+/*
 test.serial('should display error message when passing only 1 argument', async t => {
   const stdout = await new Promise((resolve) => {
     const p = spawn('./dist/cli.js', ['./sample/actual']);
@@ -196,6 +201,44 @@ test.serial('should generate fail report', async t => {
     t.fail();
   }
 });
+*/
+test.serial('should generate fail report with mixed png and jpg images', async t => {
+  await new Promise(resolve => {
+    const p = spawn('./dist/cli.js', [
+      `${WORKSPACE}/resource/actual`,
+      `${WORKSPACE}/resource/expected`,
+      `${WORKSPACE}/diff`,
+      '-R',
+      `${WORKSPACE}/dist/report.html`,
+    ]);
+    p.on('close', code => resolve(code));
+    p.stderr.on('data', data => console.error(data));
+  });
+
+  try {
+    fs.readFileSync(`${WORKSPACE}/dist/reg.json`);
+    const report = replaceReportPath(JSON.parse(fs.readFileSync(`./reg.json`, 'utf8')));
+    const expected = {
+      actualItems: [SAMPLE_IMAGE_JPG, `${SAMPLE_IMAGE}`, ],
+      expectedItems: [SAMPLE_IMAGE_JPG, `${SAMPLE_IMAGE}`, ],
+      diffItems: ['sample-1.png', `${SAMPLE_DIFF_IMAGE}`, ],
+      failedItems: [ SAMPLE_DIFF_IMAGE_JPG, `${SAMPLE_IMAGE}`,],
+      newItems: [],
+      deletedItems: [],
+      passedItems: [],
+      actualDir: `./${WORKSPACE}/resource/actual`,
+      expectedDir: `./${WORKSPACE}/resource/expected`,
+      diffDir: `./${WORKSPACE}/diff`,
+    };
+    t.deepEqual(report, expected);
+    t.pass();
+ 
+  } catch (e) {
+    console.error(e);
+    t.fail();
+  }
+});
+/*
 
 test.serial('should generate fail report with -T 0.00', async t => {
   await new Promise((resolve) => {
@@ -484,10 +527,11 @@ test.serial('perf', async t => {
   console.timeEnd('100images');
   t.pass();
 });
+*/
 
 
 test.afterEach.always(async t => {
-  await new Promise((done) => rimraf(`${WORKSPACE}${IMAGE_FILES}`, done));
-  await new Promise((done) => rimraf(`./reg.json`, done));
+  // await new Promise(done => rimraf(`${WORKSPACE}${IMAGE_FILES}`, done));
+  // await new Promise(done => rimraf(`./reg.json`, done));
 });
 
